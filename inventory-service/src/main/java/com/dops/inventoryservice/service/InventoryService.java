@@ -16,6 +16,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.web.multipart.MultipartFile;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,11 +36,28 @@ public class InventoryService {
     private final InventoryEventProducer inventoryEventProducer;
 
     @Transactional
-    public ProductResponse createProduct(ProductRequest request) {
+    public ProductResponse createProduct(ProductRequest request, MultipartFile image) {
+        String imageUrl = null;
+        if (image != null && !image.isEmpty()) {
+            try {
+                Path uploadPath = Paths.get("uploads");
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+                String filename = UUID.randomUUID().toString() + "_" + image.getOriginalFilename();
+                Path filePath = uploadPath.resolve(filename);
+                Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+                imageUrl = "http://localhost:8082/uploads/" + filename;
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to store image", e);
+            }
+        }
+
         Product prod = Product.builder()
                 .productName(request.productName())
                 .description(request.description())
                 .price(request.price())
+                .imageUrl(imageUrl)
                 .build();
 
         Product product = productRepository.save(prod);
@@ -53,6 +77,7 @@ public class InventoryService {
                 .description(product.getDescription())
                 .price(product.getPrice())
                 .availableQuantity(inventory.getAvailableQuantity())
+                .imageUrl(product.getImageUrl())
                 .build();
     }
 
@@ -66,6 +91,7 @@ public class InventoryService {
                         .description(inventory.getProduct().getDescription())
                         .price(inventory.getProduct().getPrice())
                         .availableQuantity(inventory.getAvailableQuantity())
+                        .imageUrl(inventory.getProduct().getImageUrl())
                         .build())
                 .toList();
     }
@@ -80,6 +106,7 @@ public class InventoryService {
                         .description(inventory.getProduct().getDescription())
                         .price(inventory.getProduct().getPrice())
                         .availableQuantity(inventory.getAvailableQuantity())
+                        .imageUrl(inventory.getProduct().getImageUrl())
                         .build())
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
     }

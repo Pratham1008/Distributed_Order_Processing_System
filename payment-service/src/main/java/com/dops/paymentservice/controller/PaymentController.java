@@ -32,4 +32,10 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.getPaymentByOrderId(orderId));
     }
 
+    @PostMapping("/{orderId}/process")
+    public ResponseEntity<Void> processPayment(@PathVariable UUID orderId, @org.springframework.web.bind.annotation.RequestParam boolean success) {
+        paymentService.processPendingPayment(orderId, success);
+        return ResponseEntity.ok().build();
+    }
+
 }

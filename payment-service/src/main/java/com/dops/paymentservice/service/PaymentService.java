@@ -44,15 +44,35 @@ public class PaymentService {
                     .orderId(event.orderId())
                     .amount(event.amount())
                     .currency("INR")
-                    .status(PaymentStatus.COMPLETED)
+                    .status(PaymentStatus.PENDING)
                     .createdAt(Instant.now())
                     .build();
             paymentRepository.save(payment);
-            
-            paymentEventProducer.publishPaymentCompleted(new PaymentCompleted(payment.getOrderId()));
+            // DO NOT publish event here, wait for manual processing
         } catch (Exception exception) {
             Payment payment = savePayment(event, PaymentStatus.FAILED, exception.getMessage());
             paymentEventProducer.publishPaymentFailed(new PaymentFailed(payment.getOrderId()));
+        }
+    }
+
+    @Transactional
+    public void processPendingPayment(UUID orderId, boolean success) {
+        Payment payment = paymentRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Payment not found for order: " + orderId));
+
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            throw new IllegalStateException("Payment is not in PENDING state");
+        }
+
+        if (success) {
+            payment.setStatus(PaymentStatus.COMPLETED);
+            paymentRepository.save(payment);
+            paymentEventProducer.publishPaymentCompleted(new PaymentCompleted(orderId));
+        } else {
+            payment.setStatus(PaymentStatus.FAILED);
+            payment.setFailureReason("User manually failed payment");
+            paymentRepository.save(payment);
+            paymentEventProducer.publishPaymentFailed(new PaymentFailed(orderId));
         }
     }
 
