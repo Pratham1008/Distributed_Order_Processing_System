@@ -2,7 +2,7 @@
 const SERVER_API_URL = process.env.API_URL || 'http://api-gateway:8080';
 
 // Backend URL for Client Components (external browser network)
-const CLIENT_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const CLIENT_API_URL = '/api';
 
 export function getBaseUrl(isServerSide = true) {
     return isServerSide ? SERVER_API_URL : CLIENT_API_URL;
