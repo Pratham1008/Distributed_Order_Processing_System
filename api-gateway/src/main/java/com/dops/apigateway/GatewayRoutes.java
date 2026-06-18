@@ -13,10 +13,19 @@ import static org.springframework.web.servlet.function.RequestPredicates.path;
 @Configuration
 public class GatewayRoutes {
 
+    @org.springframework.beans.factory.annotation.Value("${dops.order-url:http://order-service:8081}")
+    private String orderUrl;
+
+    @org.springframework.beans.factory.annotation.Value("${dops.inventory-url:http://inventory-service:8082}")
+    private String inventoryUrl;
+
+    @org.springframework.beans.factory.annotation.Value("${dops.payment-url:http://payment-service:8083}")
+    private String paymentUrl;
+
     @Bean
     public RouterFunction<ServerResponse> orderRoutes() {
         return route("order-service")
-                .before(uri("http://localhost:8081"))
+                .before(uri(orderUrl))
                 .route(path("/orders/**"), http())
                 .build();
     }
@@ -24,7 +33,7 @@ public class GatewayRoutes {
     @Bean
     public RouterFunction<ServerResponse> inventoryRoutes() {
         return route("inventory-service")
-                .before(uri("http://localhost:8082"))
+                .before(uri(inventoryUrl))
                 .route(path("/products/**"), http())
                 .route(path("/inventory/**"), http())
                 .build();
@@ -33,8 +42,9 @@ public class GatewayRoutes {
     @Bean
     public RouterFunction<ServerResponse> paymentRoutes() {
         return route("payment-service")
-                .before(uri("http://localhost:8083"))
+                .before(uri(paymentUrl))
                 .route(path("/payments/**"), http())
                 .build();
     }
+
 }

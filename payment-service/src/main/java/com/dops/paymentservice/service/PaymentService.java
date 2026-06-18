@@ -9,15 +9,21 @@ import com.dops.paymentservice.model.Payment;
 import com.dops.paymentservice.model.PaymentStatus;
 import com.dops.paymentservice.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
@@ -25,6 +31,7 @@ public class PaymentService {
 
     @Transactional
     public void processPayment(InventoryReserved event) {
+        log.info("Processing payment for order: {}, amount: {}", event.orderId(), event.amount());
         paymentRepository.findByOrderId(event.orderId())
                 .ifPresentOrElse(
                         this::publishExistingPaymentResult,
@@ -33,7 +40,8 @@ public class PaymentService {
     }
 
     private void createPayment(InventoryReserved event) {
-        if (event.amount() == null || event.amount() <= 0) {
+        if (event.amount() == null || event.amount().compareTo(BigDecimal.ZERO) <= 0) {
+            log.error("Invalid payment amount for order: {}", event.orderId());
             Payment payment = savePayment(event, PaymentStatus.FAILED, "Invalid payment amount");
             paymentEventProducer.publishPaymentFailed(new PaymentFailed(payment.getOrderId()));
             return;
@@ -48,8 +56,9 @@ public class PaymentService {
                     .createdAt(Instant.now())
                     .build();
             paymentRepository.save(payment);
-            // DO NOT publish event here, wait for manual processing
+            log.info("Payment created with PENDING status for order: {}", event.orderId());
         } catch (Exception exception) {
+            log.error("Error creating payment for order: {}", event.orderId(), exception);
             Payment payment = savePayment(event, PaymentStatus.FAILED, exception.getMessage());
             paymentEventProducer.publishPaymentFailed(new PaymentFailed(payment.getOrderId()));
         }
@@ -57,6 +66,7 @@ public class PaymentService {
 
     @Transactional
     public void processPendingPayment(UUID orderId, boolean success) {
+        log.info("Manually processing payment for order: {}, success: {}", orderId, success);
         Payment payment = paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Payment not found for order: " + orderId));
 
@@ -105,10 +115,8 @@ public class PaymentService {
     }
 
     @Transactional(readOnly = true)
-    public List<PaymentResponse> getAllPayments() {
-        return paymentRepository.findAll().stream()
-                .map(this::toResponse)
-                .toList();
+    public Page<PaymentResponse> getAllPayments(Pageable pageable) {
+        return paymentRepository.findAll(pageable).map(this::toResponse);
     }
 
     private PaymentResponse toResponse(Payment payment) {

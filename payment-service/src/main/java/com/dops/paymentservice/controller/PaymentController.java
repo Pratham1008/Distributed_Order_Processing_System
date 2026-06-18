@@ -4,6 +4,8 @@ import com.dops.paymentservice.dto.PaymentResponse;
 import com.dops.paymentservice.service.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,8 +25,8 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @GetMapping
-    public ResponseEntity<List<PaymentResponse>> getAllPayments() {
-        return ResponseEntity.ok(paymentService.getAllPayments());
+    public ResponseEntity<Page<PaymentResponse>> getAllPayments(Pageable pageable) {
+        return ResponseEntity.ok(paymentService.getAllPayments(pageable));
     }
 
     @GetMapping("/{orderId}")

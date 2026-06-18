@@ -14,9 +14,14 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
+
 @Configuration
 @EnableKafka
 public class KafkaConsumerConfig {
+
+    @Value("${spring.kafka.bootstrap-servers}")
+    private String bootstrapServers;
 
     @Bean
     public ConsumerFactory<String, Object> consumerFactory() {
@@ -25,7 +30,7 @@ public class KafkaConsumerConfig {
 
         config.put(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                "localhost:9092"
+                bootstrapServers
         );
 
         config.put(
@@ -45,7 +50,7 @@ public class KafkaConsumerConfig {
 
         config.put(
                 JsonDeserializer.TRUSTED_PACKAGES,
-                "*"
+                "com.dops.common.event"
         );
 
         config.put(
@@ -70,6 +75,7 @@ public class KafkaConsumerConfig {
                 new ConcurrentKafkaListenerContainerFactory<>();
 
         factory.setConsumerFactory(consumerFactory());
+        factory.setConcurrency(3);
 
         return factory;
     }

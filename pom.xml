@@ -9,11 +9,31 @@
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <modules>
-        <module>common-events</module>
-        <module>order-service</module>
-        <module>inventory-service</module>
-        <module>payment-service</module>
-        <module>api-gateway</module>
-    </modules>
+    <profiles>
+        <profile>
+            <id>common-events-module</id>
+            <activation><file><exists>common-events/pom.xml</exists></file></activation>
+            <modules><module>common-events</module></modules>
+        </profile>
+        <profile>
+            <id>order-service-module</id>
+            <activation><file><exists>order-service/pom.xml</exists></file></activation>
+            <modules><module>order-service</module></modules>
+        </profile>
+        <profile>
+            <id>inventory-service-module</id>
+            <activation><file><exists>inventory-service/pom.xml</exists></file></activation>
+            <modules><module>inventory-service</module></modules>
+        </profile>
+        <profile>
+            <id>payment-service-module</id>
+            <activation><file><exists>payment-service/pom.xml</exists></file></activation>
+            <modules><module>payment-service</module></modules>
+        </profile>
+        <profile>
+            <id>api-gateway-module</id>
+            <activation><file><exists>api-gateway/pom.xml</exists></file></activation>
+            <modules><module>api-gateway</module></modules>
+        </profile>
+    </profiles>
 </project>

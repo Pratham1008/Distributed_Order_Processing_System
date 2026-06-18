@@ -4,11 +4,13 @@ import com.dops.orderservice.dto.OrderRequest;
 import com.dops.orderservice.dto.OrderResponse;
 import com.dops.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import jakarta.validation.Valid;
 import java.util.UUID;
 
 @RestController
@@ -19,7 +21,7 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping()
-    public ResponseEntity<OrderResponse> createOrder(@RequestBody OrderRequest request) {
+    public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody OrderRequest request) {
         OrderResponse response = orderService.createOrder(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -30,8 +32,8 @@ public class OrderController {
     }
 
     @GetMapping()
-    public ResponseEntity<List<OrderResponse>> getAllOrders() {
-        return new ResponseEntity<>(orderService.getAllOrders(), HttpStatus.OK);
+    public ResponseEntity<Page<OrderResponse>> getOrders(Pageable pageable) {
+        return new ResponseEntity<>(orderService.getAllOrders(pageable), HttpStatus.OK);
     }
 
     @DeleteMapping("/{orderId}")

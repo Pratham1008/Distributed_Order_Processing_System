@@ -9,14 +9,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -29,7 +32,7 @@ public class Payment {
     @Column(nullable = false, unique = true)
     private UUID orderId;
 
-    private Double amount;
+    private BigDecimal amount;
 
     private String currency;
 

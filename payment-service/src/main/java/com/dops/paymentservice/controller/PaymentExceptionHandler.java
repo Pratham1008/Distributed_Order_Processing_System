@@ -19,9 +19,16 @@ public class PaymentExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationError() {
+    public ResponseEntity<Map<String, String>> handleValidationError(MethodArgumentNotValidException ex) {
         return ResponseEntity
                 .badRequest()
-                .body(Map.of("error", "Invalid payment verification request"));
+                .body(Map.of("error", "Invalid payment verification request", "details", ex.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalState(IllegalStateException exception) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(Map.of("error", exception.getMessage()));
     }
 }

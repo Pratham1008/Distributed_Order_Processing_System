@@ -13,6 +13,8 @@ import com.dops.inventoryservice.repository.InventoryRepository;
 import com.dops.inventoryservice.repository.InventoryReservationRepository;
 import com.dops.inventoryservice.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,8 +28,12 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class InventoryService {
 
     private final ProductRepository productRepository;
@@ -35,8 +41,12 @@ public class InventoryService {
     private final InventoryReservationRepository inventoryReservationRepository;
     private final InventoryEventProducer inventoryEventProducer;
 
+    @Value("${app.image.base-url:http://localhost:8082/uploads/}")
+    private String imageBaseUrl;
+
     @Transactional
     public ProductResponse createProduct(ProductRequest request, MultipartFile image) {
+        log.info("Creating product with SKU: {}", request.sku());
         String imageUrl = null;
         if (image != null && !image.isEmpty()) {
             try {
@@ -47,8 +57,9 @@ public class InventoryService {
                 String filename = UUID.randomUUID().toString() + "_" + image.getOriginalFilename();
                 Path filePath = uploadPath.resolve(filename);
                 Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-                imageUrl = "http://localhost:8082/uploads/" + filename;
+                imageUrl = imageBaseUrl + filename;
             } catch (IOException e) {
+                log.error("Failed to store image", e);
                 throw new RuntimeException("Failed to store image", e);
             }
         }
@@ -70,63 +81,51 @@ public class InventoryService {
 
         inventoryRepository.save(inventory);
 
-        return ProductResponse.builder()
-                .productId(product.getProductId())
-                .sku(inventory.getSku())
-                .productName(product.getProductName())
-                .description(product.getDescription())
-                .price(product.getPrice())
-                .availableQuantity(inventory.getAvailableQuantity())
-                .imageUrl(product.getImageUrl())
-                .build();
+        return toResponse(inventory);
     }
 
     @Transactional(readOnly = true)
-    public List<ProductResponse> getAllProducts() {
-        return inventoryRepository.findAll().stream()
-                .map(inventory -> ProductResponse.builder()
-                        .productId(inventory.getProduct().getProductId())
-                        .sku(inventory.getSku())
-                        .productName(inventory.getProduct().getProductName())
-                        .description(inventory.getProduct().getDescription())
-                        .price(inventory.getProduct().getPrice())
-                        .availableQuantity(inventory.getAvailableQuantity())
-                        .imageUrl(inventory.getProduct().getImageUrl())
-                        .build())
-                .toList();
+    public Page<ProductResponse> getAllProducts(Pageable pageable) {
+        return inventoryRepository.findAll(pageable)
+                .map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
     public ProductResponse getProductById(UUID productId) {
         return inventoryRepository.readByProductProductId(productId)
-                .map(inventory -> ProductResponse.builder()
-                        .productId(inventory.getProduct().getProductId())
-                        .sku(inventory.getSku())
-                        .productName(inventory.getProduct().getProductName())
-                        .description(inventory.getProduct().getDescription())
-                        .price(inventory.getProduct().getPrice())
-                        .availableQuantity(inventory.getAvailableQuantity())
-                        .imageUrl(inventory.getProduct().getImageUrl())
-                        .build())
+                .map(this::toResponse)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+    }
+
+    private ProductResponse toResponse(Inventory inventory) {
+        return ProductResponse.builder()
+                .productId(inventory.getProduct().getProductId())
+                .sku(inventory.getSku())
+                .productName(inventory.getProduct().getProductName())
+                .description(inventory.getProduct().getDescription())
+                .price(inventory.getProduct().getPrice())
+                .availableQuantity(inventory.getAvailableQuantity())
+                .imageUrl(inventory.getProduct().getImageUrl())
+                .build();
     }
 
     @Transactional
     public void reserveInventory(OrderCreated event) {
+        log.info("Reserving inventory for order: {}", event.orderId());
         if (inventoryReservationRepository.findByOrderId(event.orderId()).isPresent()) {
+            log.info("Inventory reservation already exists for order: {}", event.orderId());
             publishReserved(event);
             return;
         }
 
-        Inventory inventory = inventoryRepository.findByProductProductId(event.productId())
-                .orElse(null);
-
+        Inventory inventory = inventoryRepository.findByProductProductId(event.productId()).orElse(null);
         if (inventory == null) {
+            log.warn("Product inventory not found: {}", event.productId());
             publishFailed(event, "Product inventory not found");
             return;
         }
-
         if (inventory.getAvailableQuantity() < event.quantity()) {
+            log.warn("Insufficient inventory for product: {}. Available: {}, Requested: {}", event.productId(), inventory.getAvailableQuantity(), event.quantity());
             publishFailed(event, "Insufficient inventory");
             return;
         }
@@ -146,9 +145,11 @@ public class InventoryService {
 
     @Transactional
     public void releaseReservedInventory(UUID orderId) {
+        log.info("Releasing reserved inventory for order: {}", orderId);
         inventoryReservationRepository.findByOrderId(orderId)
                 .ifPresent(reservation -> {
-                    Inventory inventory = reservation.getInventory();
+                    Inventory inventory = inventoryRepository.findByProductProductId(reservation.getInventory().getProduct().getProductId())
+                            .orElseThrow(() -> new IllegalStateException("Inventory not found"));
                     inventory.setAvailableQuantity(inventory.getAvailableQuantity() + reservation.getQuantity());
                     inventoryRepository.save(inventory);
                     inventoryReservationRepository.delete(reservation);
