@@ -10,7 +10,6 @@ interface ProductImageProps {
 export default function ProductImage({ src, alt }: ProductImageProps) {
     const [hasError, setHasError] = useState(false);
 
-    // Fix existing database records that have localhost hardcoded
     const imageUrl = src?.replace('http://localhost:8082', '/api');
 
     if (hasError) {

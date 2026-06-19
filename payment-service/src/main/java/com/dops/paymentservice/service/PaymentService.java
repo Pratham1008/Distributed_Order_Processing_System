@@ -9,6 +9,7 @@ import com.dops.paymentservice.model.Payment;
 import com.dops.paymentservice.model.PaymentStatus;
 import com.dops.paymentservice.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,10 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
-
-import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -95,7 +93,6 @@ public class PaymentService {
                 .failureReason(failureReason)
                 .createdAt(Instant.now())
                 .build();
-
         return paymentRepository.save(payment);
     }
 

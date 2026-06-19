@@ -13,7 +13,6 @@ public class OrderEventProducer {
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public void publishOrderCreated(OrderCreated event) {
-
         kafkaTemplate.send(
                 SagaTopics.ORDER_CREATED,
                 event

@@ -1,5 +1,6 @@
 package com.dops.apigateway;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.function.RouterFunction;
@@ -13,13 +14,13 @@ import static org.springframework.web.servlet.function.RequestPredicates.path;
 @Configuration
 public class GatewayRoutes {
 
-    @org.springframework.beans.factory.annotation.Value("${dops.order-url:http://order-service:8081}")
+    @Value("${dops.order-url:http://order-service:8081}")
     private String orderUrl;
 
-    @org.springframework.beans.factory.annotation.Value("${dops.inventory-url:http://inventory-service:8082}")
+    @Value("${dops.inventory-url:http://inventory-service:8082}")
     private String inventoryUrl;
 
-    @org.springframework.beans.factory.annotation.Value("${dops.payment-url:http://payment-service:8083}")
+    @Value("${dops.payment-url:http://payment-service:8083}")
     private String paymentUrl;
 
     @Bean

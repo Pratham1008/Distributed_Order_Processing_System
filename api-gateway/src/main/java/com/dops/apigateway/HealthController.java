@@ -24,28 +24,24 @@ public class HealthController {
 
     @GetMapping("/orders")
     public ResponseEntity<String> orderHealth() {
-        try {
-            return restTemplate.getForEntity(orderUrl + "/actuator/health", String.class);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("{\"status\":\"DOWN\"}");
-        }
+        return probeHealth(orderUrl);
     }
 
     @GetMapping("/inventory")
     public ResponseEntity<String> inventoryHealth() {
-        try {
-            return restTemplate.getForEntity(inventoryUrl + "/actuator/health", String.class);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("{\"status\":\"DOWN\"}");
-        }
+        return probeHealth(inventoryUrl);
     }
 
     @GetMapping("/payments")
     public ResponseEntity<String> paymentHealth() {
+        return probeHealth(paymentUrl);
+    }
+
+    private ResponseEntity<String> probeHealth(String serviceUrl) {
         try {
-            return restTemplate.getForEntity(paymentUrl + "/actuator/health", String.class);
+            return restTemplate.getForEntity(serviceUrl + "/actuator/health", String.class);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("{\"status\":\"DOWN\"}");
+            return ResponseEntity.internalServerError().body("{\"status\":\"DOWN\"}");
         }
     }
 }

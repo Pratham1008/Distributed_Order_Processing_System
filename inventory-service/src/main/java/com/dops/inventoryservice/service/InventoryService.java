@@ -1,10 +1,10 @@
 package com.dops.inventoryservice.service;
 
-import com.dops.inventoryservice.dto.ProductRequest;
-import com.dops.inventoryservice.dto.ProductResponse;
 import com.dops.common.event.InventoryFailed;
 import com.dops.common.event.InventoryReserved;
 import com.dops.common.event.OrderCreated;
+import com.dops.inventoryservice.dto.ProductRequest;
+import com.dops.inventoryservice.dto.ProductResponse;
 import com.dops.inventoryservice.kafka.InventoryEventProducer;
 import com.dops.inventoryservice.model.Inventory;
 import com.dops.inventoryservice.model.InventoryReservation;
@@ -13,23 +13,20 @@ import com.dops.inventoryservice.repository.InventoryRepository;
 import com.dops.inventoryservice.repository.InventoryReservationRepository;
 import com.dops.inventoryservice.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import org.springframework.web.multipart.MultipartFile;
-import java.io.File;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.List;
 import java.util.UUID;
-
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 
 @Service
 @RequiredArgsConstructor
@@ -47,22 +44,7 @@ public class InventoryService {
     @Transactional
     public ProductResponse createProduct(ProductRequest request, MultipartFile image) {
         log.info("Creating product with SKU: {}", request.sku());
-        String imageUrl = null;
-        if (image != null && !image.isEmpty()) {
-            try {
-                Path uploadPath = Paths.get("uploads");
-                if (!Files.exists(uploadPath)) {
-                    Files.createDirectories(uploadPath);
-                }
-                String filename = UUID.randomUUID().toString() + "_" + image.getOriginalFilename();
-                Path filePath = uploadPath.resolve(filename);
-                Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-                imageUrl = imageBaseUrl + filename;
-            } catch (IOException e) {
-                log.error("Failed to store image", e);
-                throw new RuntimeException("Failed to store image", e);
-            }
-        }
+        String imageUrl = storeImage(image);
 
         Product prod = Product.builder()
                 .productName(request.productName())
@@ -95,18 +77,6 @@ public class InventoryService {
         return inventoryRepository.readByProductProductId(productId)
                 .map(this::toResponse)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
-    }
-
-    private ProductResponse toResponse(Inventory inventory) {
-        return ProductResponse.builder()
-                .productId(inventory.getProduct().getProductId())
-                .sku(inventory.getSku())
-                .productName(inventory.getProduct().getProductName())
-                .description(inventory.getProduct().getDescription())
-                .price(inventory.getProduct().getPrice())
-                .availableQuantity(inventory.getAvailableQuantity())
-                .imageUrl(inventory.getProduct().getImageUrl())
-                .build();
     }
 
     @Transactional
@@ -148,12 +118,42 @@ public class InventoryService {
         log.info("Releasing reserved inventory for order: {}", orderId);
         inventoryReservationRepository.findByOrderId(orderId)
                 .ifPresent(reservation -> {
-                    Inventory inventory = inventoryRepository.findByProductProductId(reservation.getInventory().getProduct().getProductId())
-                            .orElseThrow(() -> new IllegalStateException("Inventory not found"));
+                    Inventory inventory = reservation.getInventory();
                     inventory.setAvailableQuantity(inventory.getAvailableQuantity() + reservation.getQuantity());
                     inventoryRepository.save(inventory);
                     inventoryReservationRepository.delete(reservation);
                 });
+    }
+
+    private String storeImage(MultipartFile image) {
+        if (image == null || image.isEmpty()) {
+            return null;
+        }
+        try {
+            Path uploadPath = Paths.get("uploads");
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+            String filename = UUID.randomUUID() + "_" + image.getOriginalFilename();
+            Path filePath = uploadPath.resolve(filename);
+            Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            return imageBaseUrl + filename;
+        } catch (IOException e) {
+            log.error("Failed to store image", e);
+            throw new RuntimeException("Failed to store image", e);
+        }
+    }
+
+    private ProductResponse toResponse(Inventory inventory) {
+        return ProductResponse.builder()
+                .productId(inventory.getProduct().getProductId())
+                .sku(inventory.getSku())
+                .productName(inventory.getProduct().getProductName())
+                .description(inventory.getProduct().getDescription())
+                .price(inventory.getProduct().getPrice())
+                .availableQuantity(inventory.getAvailableQuantity())
+                .imageUrl(inventory.getProduct().getImageUrl())
+                .build();
     }
 
     private void publishReserved(OrderCreated event) {

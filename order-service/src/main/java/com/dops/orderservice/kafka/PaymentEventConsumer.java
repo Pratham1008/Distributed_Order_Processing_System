@@ -28,7 +28,6 @@ public class PaymentEventConsumer {
             groupId = "order-group"
     )
     public void paymentFailed(PaymentFailed event) {
-
         orderService.updateStatus(event.orderId(), OrderStatus.FAILED);
     }
 }

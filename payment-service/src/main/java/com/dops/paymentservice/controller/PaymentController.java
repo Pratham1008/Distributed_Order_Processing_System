@@ -2,19 +2,12 @@ package com.dops.paymentservice.controller;
 
 import com.dops.paymentservice.dto.PaymentResponse;
 import com.dops.paymentservice.service.PaymentService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -35,9 +28,8 @@ public class PaymentController {
     }
 
     @PostMapping("/{orderId}/process")
-    public ResponseEntity<Void> processPayment(@PathVariable UUID orderId, @org.springframework.web.bind.annotation.RequestParam boolean success) {
+    public ResponseEntity<Void> processPayment(@PathVariable UUID orderId, @RequestParam boolean success) {
         paymentService.processPendingPayment(orderId, success);
         return ResponseEntity.ok().build();
     }
-
 }

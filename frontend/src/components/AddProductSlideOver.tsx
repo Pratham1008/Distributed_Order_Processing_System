@@ -47,14 +47,11 @@ export default function AddProductSlideOver() {
             const price = parseFloat(formData.get('price') as string);
             const stock = parseInt(formData.get('stock') as string);
             
-            // Construct multipart/form-data for Spring Boot backend
             const backendFormData = new FormData();
             
-            // Product info as JSON part
             const productInfo = { productName, sku, description, price, stock };
             backendFormData.append('product', new Blob([JSON.stringify(productInfo)], { type: 'application/json' }));
             
-            // Image file part
             const imageFile = formData.get('image') as File;
             if (imageFile && imageFile.size > 0) {
                 backendFormData.append('image', imageFile);
@@ -67,9 +64,8 @@ export default function AddProductSlideOver() {
 
             closeSlideOver();
             form.reset();
-            router.refresh(); // Refresh the page to show new product
+            router.refresh();
             
-            // In a real app we'd use a toast library here
             alert("Product added successfully!");
         } catch (err) {
             console.error("Error adding product:", err);
@@ -86,10 +82,8 @@ export default function AddProductSlideOver() {
                 Add Product
             </button>
 
-            {/* Backdrop */}
             <div className={`fixed inset-0 bg-on-surface/40 z-30 transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={closeSlideOver}></div>
             
-            {/* Slide-over Panel */}
             <div className={`fixed inset-y-0 right-0 w-full max-w-md bg-surface-container-lowest shadow-2xl z-40 flex flex-col border-l border-outline-variant transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                 <div className="flex items-center justify-between p-6 border-b border-outline-variant bg-surface">
                     <h2 className="font-headline-md text-headline-md text-on-surface">Add New Product</h2>
@@ -106,7 +100,6 @@ export default function AddProductSlideOver() {
                     )}
                     
                     <form id="addProductForm" onSubmit={handleSubmit} className="flex flex-col gap-5">
-                        {/* Image Upload */}
                         <div>
                             <label className="block font-label-md text-label-md text-on-surface mb-2">Product Image</label>
                             <div 
@@ -127,25 +120,21 @@ export default function AddProductSlideOver() {
                             <input type="file" name="image" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageChange} />
                         </div>
                         
-                        {/* Product Name */}
                         <div>
                             <label className="block font-label-md text-label-md text-on-surface mb-2" htmlFor="productName">Product Name <span className="text-error">*</span></label>
                             <input required type="text" id="productName" name="productName" className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow placeholder-outline" placeholder="e.g. Ergonomic Office Chair" />
                         </div>
 
-                        {/* SKU */}
                         <div>
                             <label className="block font-label-md text-label-md text-on-surface mb-2" htmlFor="sku">SKU <span className="text-error">*</span></label>
                             <input required type="text" id="sku" name="sku" className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 font-mono-sm text-mono-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow placeholder-outline uppercase" placeholder="ITM-001" />
                         </div>
                         
                         <div className="grid grid-cols-2 gap-4">
-                            {/* Stock */}
                             <div>
                                 <label className="block font-label-md text-label-md text-on-surface mb-2" htmlFor="stock">Initial Stock <span className="text-error">*</span></label>
                                 <input required type="number" min="0" id="stock" name="stock" className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow" placeholder="0" />
                             </div>
-                            {/* Price */}
                             <div>
                                 <label className="block font-label-md text-label-md text-on-surface mb-2" htmlFor="price">Price <span className="text-error">*</span></label>
                                 <div className="relative">
@@ -157,7 +146,6 @@ export default function AddProductSlideOver() {
                             </div>
                         </div>
                         
-                        {/* Description */}
                         <div>
                             <label className="block font-label-md text-label-md text-on-surface mb-2" htmlFor="description">Description</label>
                             <textarea id="description" name="description" rows={4} className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow resize-none placeholder-outline" placeholder="Enter product details..."></textarea>

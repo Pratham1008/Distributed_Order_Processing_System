@@ -1,16 +1,23 @@
 import { fetchFromApi } from '@/lib/api';
 import PaymentActionButtons from '@/components/PaymentActionButtons';
+import type { Metadata } from 'next';
+import type { PaginatedResponse, PaymentResponse } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
+export const metadata: Metadata = {
+    title: 'Payments | DOPS Dashboard',
+    description: 'Monitor transaction statuses and payment events in the distributed processing pipeline.',
+};
+
 export default async function PaymentsPage() {
-    let payments = [];
+    let payments: PaymentResponse[] = [];
 
     try {
-        const paymentsPage = await fetchFromApi('/payments');
+        const paymentsPage = await fetchFromApi('/payments') as PaginatedResponse<PaymentResponse>;
         payments = paymentsPage.content || [];
-    } catch (e) {
-        console.error("Failed to fetch payments", e);
+    } catch {
+        console.error("Failed to fetch payments");
     }
 
     return (
@@ -38,11 +45,11 @@ export default async function PaymentsPage() {
                             {payments.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-12 text-center text-on-surface-variant">
-                                        <span className="material-symbols-outlined text-4xl mb-2 opacity-50 block">receipt_long</span>
+                                        <span className="material-symbols-outlined text-4xl mb-2 opacity-50 block" aria-hidden="true">receipt_long</span>
                                         No payments found.
                                     </td>
                                 </tr>
-                            ) : payments.map((payment: any) => {
+                            ) : payments.map((payment) => {
                                 let statusStyles = "bg-surface-variant text-on-surface-variant";
                                 if (payment.status === 'PENDING') statusStyles = "bg-amber-100 text-amber-800";
                                 else if (payment.status === 'COMPLETED') statusStyles = "bg-green-100 text-green-800";

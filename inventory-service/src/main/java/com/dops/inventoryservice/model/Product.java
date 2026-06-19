@@ -1,14 +1,7 @@
 package com.dops.inventoryservice.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -25,10 +18,12 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID productId;
 
+    @Column(nullable = false)
     private String productName;
 
     private String description;
 
+    @Column(nullable = false, precision = 19, scale = 4)
     private BigDecimal price;
 
     private String imageUrl;
