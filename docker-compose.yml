@@ -119,7 +119,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=password
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - APP_IMAGE_BASE_URL=http://localhost:8082/uploads/
+      - APP_IMAGE_BASE_URL=/api/uploads/
       - JAVA_OPTS=-Xms64m -Xmx128m -XX:MaxMetaspaceSize=100m -XX:ReservedCodeCacheSize=32m -Xss256k -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError
     depends_on:
       postgres:

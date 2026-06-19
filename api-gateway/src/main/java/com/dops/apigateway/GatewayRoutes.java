@@ -36,6 +36,7 @@ public class GatewayRoutes {
                 .before(uri(inventoryUrl))
                 .route(path("/products/**"), http())
                 .route(path("/inventory/**"), http())
+                .route(path("/uploads/**"), http())
                 .build();
     }
 

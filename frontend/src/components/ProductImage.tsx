@@ -10,6 +10,9 @@ interface ProductImageProps {
 export default function ProductImage({ src, alt }: ProductImageProps) {
     const [hasError, setHasError] = useState(false);
 
+    // Fix existing database records that have localhost hardcoded
+    const imageUrl = src?.replace('http://localhost:8082', '/api');
+
     if (hasError) {
         return (
             <div className="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center">
@@ -20,7 +23,7 @@ export default function ProductImage({ src, alt }: ProductImageProps) {
 
     return (
         <img 
-            src={src} 
+            src={imageUrl} 
             alt={alt} 
             className="object-contain w-full h-full p-2" 
             onError={() => setHasError(true)}
