@@ -114,6 +114,8 @@ services:
       dockerfile: inventory-service/Dockerfile
     ports:
       - "8082:8082"
+    volumes:
+      - inventory_uploads:/app/uploads
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/inventory_db
       - SPRING_DATASOURCE_USERNAME=postgres
@@ -186,3 +188,4 @@ services:
 
 volumes:
   postgres_data:
+  inventory_uploads:
