@@ -18,7 +18,7 @@ services:
       KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
       KAFKA_LOG_CLEANER_DEDUPE_BUFFER_SIZE: '33554432'
       CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
-      KAFKA_HEAP_OPTS: "-Xmx256M -Xms256M"
+      KAFKA_HEAP_OPTS: "-Xmx384M -Xms384M"
     healthcheck:
       test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
       interval: 15s
@@ -27,7 +27,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 350M
+          memory: 512M
 
   postgres:
     image: postgres:15-alpine
@@ -40,7 +40,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    command: postgres -c shared_buffers=16MB -c max_connections=20
+    command: postgres -c shared_buffers=64MB -c max_connections=40
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -49,7 +49,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 100M
+          memory: 200M
 
   api-gateway:
     build:
@@ -61,7 +61,7 @@ services:
       - DOPS_ORDER_URL=http://order-service:8081
       - DOPS_INVENTORY_URL=http://inventory-service:8082
       - DOPS_PAYMENT_URL=http://payment-service:8083
-      - JAVA_OPTS=-Xms64m -Xmx128m -XX:MaxMetaspaceSize=100m -XX:ReservedCodeCacheSize=32m -Xss256k -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError
+      - JAVA_OPTS=-Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:+ExitOnOutOfMemoryError
     depends_on:
       order-service:
         condition: service_healthy
@@ -77,7 +77,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 250M
+          memory: 400M
 
   order-service:
     build:
@@ -177,14 +177,14 @@ services:
       - "80:3000"
     environment:
       - API_URL=http://api-gateway:8080
-      - NODE_OPTIONS=--max-old-space-size=64
+      - NODE_OPTIONS=--max-old-space-size=128
     depends_on:
       api-gateway:
         condition: service_healthy
     deploy:
       resources:
         limits:
-          memory: 150M
+          memory: 200M
 
 volumes:
   postgres_data:
